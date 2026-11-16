@@ -25,3 +25,30 @@ Die Datei openai_ws.py wurde auf die neue GA-Schnittstelle umgestellt. Geändert
 - Fehler-Events von OpenAI werden jetzt im Terminal ausgegeben, was die Fehlersuche erleichtert.
  
 Das verwendete Modell gpt-realtime-mini bleibt unverändert gültig.
+
+## Autostart beim Booten (systemd)
+
+Das Telefon kann ohne Anmeldung direkt nach dem Booten starten. Unter Raspberry Pi OS Bookworm (Desktop) läuft der Ton über PipeWire in der Sitzung des Benutzers, deshalb wird ein **User-Dienst mit Linger** verwendet.
+
+1. API-Key hinterlegen (statt in `config.py`):
+   ```bash
+   mkdir -p ~/.config
+   cp autostart/ki-telefon.env.example ~/.config/ki-telefon.env
+   nano ~/.config/ki-telefon.env      # OPENAI_API_KEY=sk-... eintragen
+   chmod 600 ~/.config/ki-telefon.env
+   ```
+2. Dienst installieren (Pfade in der Datei ggf. anpassen, ohne venv `ExecStart=/usr/bin/python3 main.py`):
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   cp autostart/ki-telefon.service ~/.config/systemd/user/
+   sudo loginctl enable-linger pi
+   systemctl --user daemon-reload
+   systemctl --user enable --now ki-telefon
+   ```
+3. Log ansehen: `journalctl --user -u ki-telefon -f`
+
+Hinweise:
+- USB-Soundkarte als Standardgerät festlegen (`~/.asoundrc` oder `wpctl set-default <ID>`), da sich der Index zwischen Bootvorgängen ändern kann.
+- Ziffer 0 (Herunterfahren) braucht `sudo` ohne Passwort für `/sbin/shutdown`.
+- Raspberry Pi 5: `sudo apt install python3-rpi-lgpio` als Ersatz für `RPi.GPIO`.
+- Raspberry Pi OS Lite ohne PipeWire: alternativ als Systemdienst unter `/etc/systemd/system/` mit `User=pi`, `SupplementaryGroups=gpio audio`, `After=network-online.target` und `Wants=network-online.target`.

@@ -7,11 +7,27 @@ GPIO.setmode(GPIO.BCM)
 import sounddevice as sd
 import numpy as np
 import os
+import signal
+import sys
 
 from roles import choose_role, role as role_list
 from openai_ws import connect_to_openai
 from bell import ring_until_answer
 from handset import setup, is_handset_lifted
+
+# Pfad zur Begrüßung relativ zu diesem Skript (unabhängig vom Arbeitsverzeichnis)
+GREETING_WAV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "greeting.wav")
+
+# Beim Stoppen (z. B. durch systemd) GPIOs freigeben, damit die H-Brücke
+# der Klingel nicht eingeschaltet bleibt.
+def _shutdown(signum, frame):
+    print(f"Signal {signum} empfangen – räume GPIO auf und beende.")
+    try:
+        GPIO.cleanup()
+    finally:
+        sys.exit(0)
+
+signal.signal(signal.SIGTERM, _shutdown)
 
 # Audio-Parameter
 CHUNK_SIZE = 2048
@@ -218,7 +234,7 @@ def run_conversation(selected_role=None, greeting=False):
             stop_event,
             role,
             gespraechspartner,
-            greeting="/home/pi/Desktop/KI-Telefon/greeting.wav" if greeting else None
+            greeting=GREETING_WAV if greeting else None
         )
         monitor_thread.join()
     except KeyboardInterrupt:
