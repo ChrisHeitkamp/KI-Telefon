@@ -5,13 +5,13 @@ Description=KI-Telefon (FeTAp + OpenAI Realtime)
 After=pipewire.service wireplumber.service
 
 [Service]
-WorkingDirectory=/home/pi/Desktop/KI-Telefon/Code
-EnvironmentFile=/home/pi/.config/ki-telefon.env
+WorkingDirectory=%h/Desktop/KI-Telefon/Code
+EnvironmentFile=%h/.config/ki-telefon.env
 Environment=PYTHONUNBUFFERED=1
 # Warten, bis DNS/Internet verfügbar ist (WebSocket zu OpenAI)
 ExecStartPre=/bin/sh -c 'until getent hosts api.openai.com >/dev/null; do sleep 2; done'
 # Ohne venv: ExecStart=/usr/bin/python3 main.py
-ExecStart=/home/pi/Desktop/KI-Telefon/venv/bin/python main.py
+ExecStart=%h/Desktop/KI-Telefon/venv/bin/python main.py
 Restart=always
 RestartSec=5
 

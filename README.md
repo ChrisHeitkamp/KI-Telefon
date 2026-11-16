@@ -41,7 +41,7 @@ Das Telefon kann ohne Anmeldung direkt nach dem Booten starten. Unter Raspberry 
    ```bash
    mkdir -p ~/.config/systemd/user
    cp autostart/ki-telefon.service ~/.config/systemd/user/
-   sudo loginctl enable-linger pi
+   sudo loginctl enable-linger $USER
    systemctl --user daemon-reload
    systemctl --user enable --now ki-telefon
    ```
