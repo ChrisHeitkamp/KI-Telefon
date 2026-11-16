@@ -46,6 +46,11 @@ FREQ_425HZ = 425
 FREQ_DURATION = 5
 NUM_FREIZEICHEN = 3
 FREIZEICHEN_DELAY = 0.5
+# Wer spricht zuerst?
+# Gewaehlte Nummer (ausgehend): KI hebt ab und meldet sich selbst.
+KI_SPRICHT_ZUERST_AUSGEHEND = True
+# Telefon klingelt (eingehend): False = KI wartet, bis du "Hallo" sagst.
+KI_SPRICHT_ZUERST_EINGEHEND = False
 AUTOCALL_DELAY = 30  # Sekunden bis zum nächsten Klingeln, wenn niemand abnimmt
 
 # Mikrofon-Callback
@@ -189,7 +194,7 @@ def wait_for_role_selection():
     return role_number
 
 # Angepasst
-def run_conversation(selected_role=None, greeting=False):
+def run_conversation(selected_role=None, greeting=False, ki_spricht_zuerst=False):
     global audio_buffer, mic_queue, stop_event
     stop_event.clear()
     audio_buffer.clear()
@@ -234,7 +239,8 @@ def run_conversation(selected_role=None, greeting=False):
             stop_event,
             role,
             gespraechspartner,
-            greeting=GREETING_WAV if greeting else None
+            greeting=GREETING_WAV if greeting else None,
+            ki_spricht_zuerst=ki_spricht_zuerst
         )
         monitor_thread.join()
     except KeyboardInterrupt:
@@ -253,7 +259,7 @@ def main():
     print("Erstes Klingeln...")
     if ring_until_answer(5):
         print("Abgehoben – KI verbunden (eingehend).")
-        run_conversation(greeting=False)
+        run_conversation(ki_spricht_zuerst=KI_SPRICHT_ZUERST_EINGEHEND)
     else:
         print("Niemand hat abgehoben – wechsle in Wartephase.")
     next_ring_at = time.time() + AUTOCALL_DELAY
@@ -262,7 +268,8 @@ def main():
             print("Hörer in Wartezeit abgehoben – ausgehender Anruf via Dialer.")
             role_number = wait_for_role_selection()
             if role_number is not None:
-                run_conversation(selected_role=role_number, greeting=True)
+                run_conversation(selected_role=role_number,
+                                 ki_spricht_zuerst=KI_SPRICHT_ZUERST_AUSGEHEND)
             next_ring_at = time.time() + AUTOCALL_DELAY
             continue
         now = time.time()
@@ -270,7 +277,7 @@ def main():
             print("Wartezeit abgelaufen – starte erneutes Klingeln.")
             if ring_until_answer(5):
                 print("Abgehoben – KI verbunden (eingehend).")
-                run_conversation(greeting=False)
+                run_conversation(ki_spricht_zuerst=KI_SPRICHT_ZUERST_EINGEHEND)
             else:
                 print("Wieder nicht abgehoben – Wartezeit startet neu.")
             next_ring_at = time.time() + AUTOCALL_DELAY

@@ -212,10 +212,37 @@ def inject_greeting_audio(ws, wav_path):
         print(f"Konnte Greeting nicht injizieren: {e}")
 
 
-def connect_to_openai(mic_queue, audio_buffer, stop_event, role, gespraechspartner, greeting=None):
+# Anweisung, mit der sich die KI beim Abheben meldet (nur fuer diese erste Antwort)
+MELDUNG_PROMPT = (
+    "(Dein Telefon klingelt und du hebst gerade ab. Melde dich jetzt so, wie sich "
+    "deine Figur am Telefon melden wuerde: kurz, natuerlich, mit deinem Vornamen. "
+    "Dann warte, was der Anrufer sagt.)"
+)
+
+
+def ki_meldet_sich(ws):
+    """Laesst die KI als Erstes sprechen (wie beim Abheben eines Telefons)."""
+    try:
+        ws.send(json.dumps({
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": MELDUNG_PROMPT}]
+            }
+        }))
+        ws.send(json.dumps({"type": "response.create"}))
+        print("KI meldet sich (response.create gesendet)")
+    except Exception as e:
+        print(f"Konnte Meldung der KI nicht anstossen: {e}")
+
+
+def connect_to_openai(mic_queue, audio_buffer, stop_event, role, gespraechspartner,
+                      greeting=None, ki_spricht_zuerst=False):
     """
     Startet die Verbindung zu OpenAI und steuert Sende- & Empfangs-Threads.
     greeting -> Wenn String (Pfad zu WAV) gesetzt, wird diese Datei direkt an KI geschickt.
+    ki_spricht_zuerst -> Wenn True, meldet sich die KI sofort selbst ("Ja, hallo?").
     """
     ws = None
     try:
@@ -249,6 +276,10 @@ def connect_to_openai(mic_queue, audio_buffer, stop_event, role, gespraechspartn
         if greeting:
             print(f"Starte Greeting (.wav) für KI: {greeting}")
             inject_greeting_audio(ws, greeting)
+
+        # KI meldet sich selbst, statt auf den Anrufer zu warten
+        if ki_spricht_zuerst:
+            ki_meldet_sich(ws)
 
         # Hauptloop
         while not stop_event.is_set():
