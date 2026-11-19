@@ -30,7 +30,7 @@ FREQ_425HZ = 425
 FREQ_DURATION = 5
 NUM_FREIZEICHEN = 3
 FREIZEICHEN_DELAY = 0.5
-AUTOCALL_DELAY = 30  # Sekunden bis zum nächsten Klingeln, wenn niemand abnimmt
+AUTOCALL_DELAY = 180  # Sekunden bis zum nächsten Klingeln (3 Minuten)
 
 # Mikrofon-Callback
 def mic_callback(in_data, frame_count, time_info, status):
